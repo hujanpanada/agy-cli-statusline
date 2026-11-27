@@ -1,4 +1,4 @@
-# agy-statusline
+# agy-cli-statusline
 
 Cross-platform custom status line for Google Antigravity CLI (`agy`) using Node.js with zero external dependencies.
 
