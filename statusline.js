@@ -64,7 +64,7 @@ function readGitBranch(startDir) {
 }
 
 function checkProcAncestorsSkipPerm() {
-  if (process.platform !== 'linux') return false;
+  if (process.platform !== 'linux' || process.env.AGY_DISABLE_PROC_CHECK === '1') return false;
   try {
     let pid = process.ppid;
     for (let i = 0; i < 4; i++) {
@@ -185,7 +185,9 @@ try {
     dirPart += `${GREEN}(${branch})${RESET}`;
   }
 
-  const parts = [dirPart];
+  const line1 = [dirPart];
+  const line2 = [];
+  const line3 = [];
 
   // Read settings.json once for toolPermission / agentMode / model fallback
   const settingsPath = path.join(agyDir, 'settings.json');
@@ -209,11 +211,11 @@ try {
   }
 
   if (skipPerm) {
-    parts.push(`${RED}${BOLD}[skip-perm]${RESET}`);
+    line1.push(`${RED}${BOLD}[skip-perm]${RESET}`);
   }
 
   // 2b. Agent mode: [default] / [accept-edits] / [auto] / [plan]
-  let rawMode = logCycleMode !== undefined ? logCycleMode : (data.agent_mode || data.mode || data.permission_mode || '');
+  let rawMode = logCycleMode !== undefined ? logCycleMode : (data.cycle_mode || data.agent_mode || data.mode || data.permission_mode || '');
   if (logCycleMode === undefined && !rawMode && typeof settings.agentMode === 'string') {
     rawMode = settings.agentMode;
   }
@@ -231,7 +233,7 @@ try {
     default: GRAY
   };
   const modeColor = modeColors[agentMode] || GRAY;
-  parts.push(`${modeColor}[${agentMode}]${RESET}`);
+  line1.push(`${modeColor}[${agentMode}]${RESET}`);
 
   // 3. Python virtualenv: (.venv)
   let venv = '';
@@ -245,7 +247,7 @@ try {
     venv = 'venv';
   }
   if (venv) {
-    parts.push(`${YELLOW}(${venv})${RESET}`);
+    line1.push(`${YELLOW}(${venv})${RESET}`);
   }
 
   // 4. Context window percentage: 39.6% ctx
@@ -259,7 +261,7 @@ try {
   } else if (usedPct >= 60) {
     ctxColor = YELLOW;
   }
-  parts.push(`${ctxColor}${usedPct.toFixed(1)}% ctx${RESET}`);
+  line2.push(`${ctxColor}${usedPct.toFixed(1)}% ctx${RESET}`);
 
   // 5. Quota usage: usage(87%w, 85%fh)
   if (data.quota && typeof data.quota === 'object' && Object.keys(data.quota).length > 0) {
@@ -306,7 +308,7 @@ try {
       } else if (minFrac < 0.50) {
         uColor = YELLOW;
       }
-      parts.push(`${GRAY}usage(${uColor}${uItems.join(', ')}${GRAY})${RESET}`);
+      line2.push(`${GRAY}usage(${uColor}${uItems.join(', ')}${GRAY})${RESET}`);
     }
   }
 
@@ -326,13 +328,16 @@ try {
     if (effort) {
       const escapedEffort = effort.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       modelName = modelName.replace(new RegExp(`\\s+\\(${escapedEffort}\\)$`, 'i'), '');
-      parts.push(`${MAGENTA}${modelName}${GRAY}(${MAGENTA}${effort}${GRAY})${RESET}`);
+      line3.push(`${MAGENTA}${modelName}${GRAY}(${MAGENTA}${effort}${GRAY})${RESET}`);
     } else {
-      parts.push(`${MAGENTA}${modelName}${RESET}`);
+      line3.push(`${MAGENTA}${modelName}${RESET}`);
     }
   }
 
-  console.log(parts.join('  '));
+  const lines = [line1, line2, line3]
+    .filter((line) => line.length > 0)
+    .map((line) => line.join('  '));
+  console.log(lines.join('\n'));
 } catch {
   console.log('agy');
 }

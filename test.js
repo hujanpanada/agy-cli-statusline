@@ -10,7 +10,7 @@ const stripAnsi = (s) => s.replace(/\x1b\[[0-9;]*m/g, '');
 
 function runStatusline(payload, { env = {}, configDir } = {}) {
   const tmpDir = configDir || fs.mkdtempSync(path.join(os.tmpdir(), 'agy-sl-'));
-  const cleanEnv = { ...process.env, AGY_CONFIG_DIR: tmpDir, ...env };
+  const cleanEnv = { ...process.env, AGY_CONFIG_DIR: tmpDir, AGY_DISABLE_PROC_CHECK: '1', ...env };
   if (!('VIRTUAL_ENV' in env)) delete cleanEnv.VIRTUAL_ENV;
   if (!('CONDA_DEFAULT_ENV' in env)) delete cleanEnv.CONDA_DEFAULT_ENV;
 
@@ -37,7 +37,14 @@ test('renders git branch, quota (%w, %fh), context, and model(effort)', () => {
     model: { display_name: 'Gemini 4 Hydrogen (High)', effort: 'high' }
   });
 
-  assert.equal(out, 'settle(main)  [skip-perm]  [default]  7.9% ctx  usage(87%w, 85%fh)  Gemini 4 Hydrogen(high)');
+  assert.equal(
+    out,
+    [
+      'settle(main)  [skip-perm]  [default]',
+      '7.9% ctx  usage(87%w, 85%fh)',
+      'Gemini 4 Hydrogen(high)'
+    ].join('\n')
+  );
 });
 
 test('reads SetCycleMode and --dangerously-skip-permissions from latest cli log', () => {
@@ -58,7 +65,7 @@ test('reads SetCycleMode and --dangerously-skip-permissions from latest cli log'
       { workspace: { current_dir: '/tmp/app' }, context_window: { used_percentage: 12.0 } },
       { configDir: cfg }
     );
-    assert.equal(out, 'app  [skip-perm]  [plan]  12.0% ctx');
+    assert.equal(out, ['app  [skip-perm]  [plan]', '12.0% ctx'].join('\n'));
   } finally {
     fs.rmSync(cfg, { recursive: true, force: true });
   }
@@ -76,7 +83,7 @@ test('detects .venv and git branch from disk without subprocesses', () => {
       permission_mode: 'acceptEdits',
       context_window: { used_percentage: 0 }
     });
-    assert.equal(out, `${path.basename(proj)}(feat/test)  [accept-edits]  (.venv)  0.0% ctx`);
+    assert.equal(out, [`${path.basename(proj)}(feat/test)  [accept-edits]  (.venv)`, '0.0% ctx'].join('\n'));
   } finally {
     fs.rmSync(proj, { recursive: true, force: true });
   }

@@ -3,7 +3,9 @@
 Cross-platform custom status line for Google Antigravity CLI (`agy`) using Node.js with zero external dependencies.
 
 ```text
-settle(main)  [skip-perm]  [default]  (.venv)  7.9% ctx  usage(87%w, 85%fh)  Gemini 4 Hydrogen(high)
+settle(main)  [skip-perm]  [default]  (.venv)
+7.9% ctx  usage(87%w, 85%fh)
+Gemini 4 Hydrogen(high)
 ```
 
 ## Segments
